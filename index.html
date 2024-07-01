@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Installment Calculator</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        .container {
+            max-width: 600px;
+            margin: auto;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 10px;
+        }
+        h1 {
+            text-align: center;
+        }
+        input[type="text"], input[type="number"], input[type="email"] {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        button {
+            width: 100%;
+            padding: 10px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #218838;
+        }
+        .result {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Installment Calculator</h1>
+    <div>
+        <label for="financierName">Financier Name:</label>
+        <input type="text" id="financierName" required>
+        <label for="interestRate">Interest Rate (%):</label>
+        <input type="number" id="interestRate" step="0.01" required>
+        <button onclick="addFinancier()">Add Financier</button>
+    </div>
+
+    <div>
+        <h2>Calculate Installment</h2>
+        <label for="loanAmount">Loan Amount:</label>
+        <input type="number" id="loanAmount" step="0.01" required>
+        <label for="financierSelect">Financier:</label>
+        <select id="financierSelect"></select>
+        <label for="tenureYears">Tenure (years):</label>
+        <input type="number" id="tenureYears" required>
+        <button onclick="calculateInstallment()">Calculate</button>
+        <div class="result" id="installmentResult"></div>
+    </div>
+
+    <div>
+        <h2>Create Quote</h2>
+        <label for="modelName">Model Name:</label>
+        <input type="text" id="modelName" required>
+        <label for="onRoadPrice">On Road Price:</label>
+        <input type="number" id="onRoadPrice" step="0.01" required>
+        <label for="loanAmountQuote">Loan Amount:</label>
+        <input type="number" id="loanAmountQuote" step="0.01" required>
+        <label for="fileCharge">File Charge:</label>
+        <input type="number" id="fileCharge" step="0.01" required>
+        <label for="serviceCharge">Service Charge:</label>
+        <input type="number" id="serviceCharge" step="0.01" required>
+        <label for="discount">Discount:</label>
+        <input type="number" id="discount" step="0.01" required>
+        <label for="salesExecutive">Sales Executive:</label>
+        <input type="text" id="salesExecutive" required>
+        <button onclick="createQuote()">Create Quote and Generate PDF</button>
+    </div>
+</div>
+
+<script>
+    let financiers = {};
+
+    function addFinancier() {
+        const name = document.getElementById('financierName').value;
+        const rate = parseFloat(document.getElementById('interestRate').value);
+
+        if (name && rate) {
+            financiers[name] = rate;
+            const option = document.createElement('option');
+            option.value = name;
+            option.textContent = name;
+            document.getElementById('financierSelect').appendChild(option);
+
+            alert(`Financier ${name} added with interest rate ${rate}%`);
+        } else {
+            alert('Please enter both name and interest rate.');
+        }
+    }
+
+    function calculateInstallment() {
+        const loanAmount = parseFloat(document.getElementById('loanAmount').value);
+        const financier = document.getElementById('financierSelect').value;
+        const tenureYears = parseInt(document.getElementById('tenureYears').value);
+
+        if (loanAmount && financier && tenureYears) {
+            const interestRate = financiers[financier];
+            const tenureMonths = tenureYears * 12;
+            const monthlyRate = interestRate / (12 * 100);
+            const emi = (loanAmount * monthlyRate * Math.pow(1 + monthlyRate, tenureMonths)) / (Math.pow(1 + monthlyRate, tenureMonths) - 1);
+            const totalInterest = emi * tenureMonths - loanAmount;
+            const totalPayable = loanAmount + totalInterest;
+
+            document.getElementById('installmentResult').innerHTML = `
+                <p>EMI: ${emi.toFixed(2)}</p>
+                <p>Total Interest: ${totalInterest.toFixed(2)}</p>
+                <p>Total Payable: ${totalPayable.toFixed(2)}</p>
+            `;
+        } else {
+            alert('Please enter all fields.');
+        }
+    }
+
+    function createQuote() {
+        const modelName = document.getElementById('modelName').value;
+        const onRoadPrice = parseFloat(document.getElementById('onRoadPrice').value);
+        const loanAmount = parseFloat(document.getElementById('loanAmountQuote').value);
+        const fileCharge = parseFloat(document.getElementById('fileCharge').value);
+        const serviceCharge = parseFloat(document.getElementById('serviceCharge').value);
+        const discount = parseFloat(document.getElementById('discount').value);
+        const salesExecutive = document.getElementById('salesExecutive').value;
+
+        if (modelName && onRoadPrice && loanAmount && fileCharge && serviceCharge && discount && salesExecutive) {
+            const totalMargin = onRoadPrice - loanAmount;
+            const totalDownpayment = totalMargin + fileCharge + serviceCharge;
+            const finalDownpayment = totalDownpayment - discount;
+
+            const quote = {
+                "Model Name": modelName,
+                "On Road Price": onRoadPrice,
+                "Loan Amount": loanAmount,
+                "Total Margin": totalMargin,
+                "File Charge": fileCharge,
+                "Service Charge": serviceCharge,
+                "Total Downpayment": totalDownpayment,
+                "Discount": discount,
+                "Final Downpayment": finalDownpayment,
+                "Sales Executive": salesExecutive,
+                "Date": new Date().toISOString().split('T')[0]
+            };
+
+            generatePDF(quote);
+        } else {
+            alert('Please enter all fields.');
+        }
+    }
+
+    function generatePDF(details) {
+        const doc = new jsPDF();
+        doc.setFontSize(12);
+        doc.text('Leela Automobiles', 105, 10, null, null, 'center');
+        doc.text('Shop No 10, 11 Geeta Nagar, Near Indian Oil Depo Vidisha Road Bhanpur Bhopal Madhya Pradesh', 105, 20, null, null, 'center');
+        doc.text('Email: leelaautomobiles@atulauto.co.in', 105, 30, null, null, 'center');
+        doc.text('Contact No: 9893977773', 105, 40, null, null, 'center');
+
+        doc.text(`Sales Executive: ${details["Sales Executive"]}`, 10, 50);
+        doc.text(`Date: ${details["Date"]}`, 10, 60);
+
+        let y = 70;
+        for (const [key, value] of Object.entries(details)) {
+            if (key !== "Sales Executive" && key !== "Date") {
+                doc.text(`${key}: ${value}`, 10, y);
+                y += 10;
+            }
+        }
+
+        doc.save('quote.pdf');
+    }
+</script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.4.0/jspdf.umd.min.js"></script>
+</body>
+</html>
